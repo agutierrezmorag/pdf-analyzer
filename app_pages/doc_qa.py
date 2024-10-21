@@ -3,11 +3,12 @@ from dotenv import load_dotenv
 from langchain.callbacks.tracers import LangChainTracer
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pypdf import PdfReader
 
 load_dotenv()
 
@@ -15,8 +16,33 @@ load_dotenv()
 if __name__ == "__page__":
     tracer = LangChainTracer(project_name="Doc Q&A")
     llm = ChatOpenAI(model="gpt-4o-mini")
-    loader = DirectoryLoader("docs/", loader_cls=PyPDFLoader, glob="*.pdf")
-    docs = loader.load()
+
+    with st.sidebar:
+        uploaded_files = st.file_uploader(
+            "Upload PDF files",
+            type=["pdf"],
+            accept_multiple_files=True,
+        )
+        load_docs = st.button(
+            "Load Documents",
+            use_container_width=True,
+            type="primary",
+            disabled=not uploaded_files,
+        )
+
+    if not uploaded_files and not load_docs:
+        st.stop()
+    docs = []
+    for uploaded_file in uploaded_files:
+        reader = PdfReader(uploaded_file)
+        content = ""
+        for page in reader.pages:
+            content += page.extract_text()
+
+        doc = Document(
+            page_content=content, metadata={"source": f"docs/{uploaded_file.name}"}
+        )
+        docs.append(doc)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     vectorstore = InMemoryVectorStore.from_documents(
