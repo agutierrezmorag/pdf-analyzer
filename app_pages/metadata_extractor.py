@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 
 import streamlit as st
+from dotenv import load_dotenv
 from langchain.callbacks.tracers import LangChainTracer
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain_core.documents import Document
@@ -10,6 +11,8 @@ from langchain_openai import ChatOpenAI
 from pypdf import PdfReader, PdfWriter
 
 from utils.metadata_schema import ExtractionData
+
+load_dotenv()
 
 
 def merge_documents_by_source(docs):
