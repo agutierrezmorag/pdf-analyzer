@@ -12,8 +12,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 load_dotenv()
 
 
-if __name__ == "__main__":
-    tracer = LangChainTracer(project_name="aqua-pdf-test")
+if __name__ == "__page__":
+    tracer = LangChainTracer(project_name="Doc Q&A")
     llm = ChatOpenAI(model="gpt-4o-mini")
     loader = DirectoryLoader("docs/", loader_cls=PyPDFLoader, glob="*.pdf")
     docs = loader.load()

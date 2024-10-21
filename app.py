@@ -9,7 +9,7 @@ if __name__ == "__main__":
     )
     doc_qa_page = st.Page(
         page="app_pages/doc_qa.py",
-        title="Document QA",
+        title="Document Q&A",
         icon=":material/question_answer:",
     )
 
