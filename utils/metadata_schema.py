@@ -7,6 +7,7 @@ class DocumentMetadata(BaseModel):
     """Informacion de un documento"""
 
     id_documento: str = Field(description="Identificador del documento")
+    fuente: str = Field(description="Nombre del documento")
     empresas: list[str] = Field(
         description="Empresa o empresas a las que pertenece el documento"
     )
