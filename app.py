@@ -1,6 +1,13 @@
 import streamlit as st
 
 if __name__ == "__main__":
+    if "uploaded_files" not in st.session_state:
+        st.session_state.uploaded_files = None
+    if "updated_files" not in st.session_state:
+        st.session_state.updated_files = []
+    if "extraction_df" not in st.session_state:
+        st.session_state.extraction_df = None
+
     metadata_extractor_page = st.Page(
         page="app_pages/metadata_extractor.py",
         icon=":material/assignment:",

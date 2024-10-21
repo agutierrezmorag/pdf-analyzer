@@ -70,7 +70,7 @@ if __name__ == "__page__":
     tracer = LangChainTracer(project_name="Metadata Extractor")
 
     with st.sidebar:
-        uploaded_files = st.file_uploader(
+        st.session_state.uploaded_files = st.file_uploader(
             "Upload PDF files",
             type=["pdf"],
             accept_multiple_files=True,
@@ -79,100 +79,119 @@ if __name__ == "__page__":
             "Generate Metadata",
             use_container_width=True,
             type="primary",
-            disabled=not uploaded_files,
+            disabled=not st.session_state.uploaded_files,
         )
-    if uploaded_files and generate_metadata:
-        docs = []
-        for uploaded_file in uploaded_files:
-            reader = PdfReader(uploaded_file)
-            content = ""
-            for page in reader.pages:
-                content += page.extract_text()
+    if not st.session_state.uploaded_files and not generate_metadata:
+        st.stop()
 
-            doc = Document(
-                page_content=content, metadata={"source": f"docs/{uploaded_file.name}"}
+    docs = []
+    for uploaded_file in st.session_state.uploaded_files:
+        reader = PdfReader(uploaded_file)
+        content = ""
+        for page in reader.pages:
+            content += page.extract_text()
+
+        doc = Document(
+            page_content=content, metadata={"source": f"docs/{uploaded_file.name}"}
+        )
+        docs.append(doc)
+
+    # merged_documents = merge_documents_by_source(docs)
+
+    text_splitter = TokenTextSplitter(chunk_size=2000, chunk_overlap=100)
+    texts = text_splitter.split_documents(docs)
+
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "Eres un experto en extraer metadatos desde una variedad de documentos PDF empresariales. "
+                "Tu tarea es analizar el documento proporcionado y extraer todos los metadatos disponibles. "
+                "En caso de que no puedas extraer un metadato, simplemente omítelo.",
+            ),
+            ("human", "{text}"),
+        ]
+    )
+    extractor_chain = prompt | llm.with_structured_output(
+        schema=ExtractionData,
+        include_raw=False,
+    )
+    st.session_state.extractions = extractor_chain.batch(
+        texts, config={"callbacks": [tracer]}
+    )
+
+    extraction_data = []
+
+    for extraction in st.session_state.extractions:
+        for metadata in extraction.metadata:
+            extraction_data.append(
+                {
+                    "id_documento": metadata.id_documento,
+                    "fuente": metadata.fuente,
+                    "empresas": ", ".join(metadata.empresas)
+                    if metadata.empresas
+                    else None,
+                    "autor": metadata.autor,
+                    "departamento": metadata.departamento,
+                    "fecha_reunion": metadata.fecha_reunion,
+                    "status": metadata.status,
+                    "keywords": ", ".join(metadata.keywords)
+                    if metadata.keywords
+                    else None,
+                    "sensibilidad": metadata.sensibilidad,
+                    "version": metadata.version,
+                }
             )
-            docs.append(doc)
 
-        # merged_documents = merge_documents_by_source(docs)
+    extraction_df = pd.DataFrame(extraction_data)
 
-        text_splitter = TokenTextSplitter(chunk_size=2000, chunk_overlap=100)
-        texts = text_splitter.split_documents(docs)
+    for i, row in extraction_df.iterrows():
+        st.table(pd.DataFrame([row]))
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "Eres un experto en extraer metadatos desde una variedad de documentos PDF empresariales. "
-                    "Tu tarea es analizar el documento proporcionado y extraer todos los metadatos disponibles. "
-                    "En caso de que no puedas extraer un metadato, simplemente omítelo.",
-                ),
-                ("human", "{text}"),
-            ]
-        )
-        extractor_chain = prompt | llm.with_structured_output(
-            schema=ExtractionData,
-            include_raw=False,
-        )
-        extractions = extractor_chain.batch(texts, config={"callbacks": [tracer]})
-
-        extraction_data = []
-        for extraction in extractions:
-            for metadata in extraction.metadata:
-                extraction_data.append(
-                    {
-                        "id_documento": metadata.id_documento,
-                        "fuente": metadata.fuente,
-                        "empresas": ", ".join(metadata.empresas)
-                        if metadata.empresas
-                        else None,
-                        "autor": metadata.autor,
-                        "departamento": metadata.departamento,
-                        "fecha_reunion": metadata.fecha_reunion,
-                        "status": metadata.status,
-                        "keywords": ", ".join(metadata.keywords)
-                        if metadata.keywords
-                        else None,
-                        "sensibilidad": metadata.sensibilidad,
-                        "version": metadata.version,
-                    }
+        pdf_path = f"updated_docs/updated_{row['fuente'].split('/')[1]}"
+        if os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as file:
+                st.download_button(
+                    label=f"Download {os.path.basename(pdf_path)}",
+                    data=file,
+                    file_name=os.path.basename(pdf_path),
+                    mime="application/pdf",
+                    key=f"download_{i}",
+                    type="primary",
+                    use_container_width=True,
                 )
 
-        # Creating a DataFrame from the flattened data
-        extraction_df = pd.DataFrame(extraction_data)
+    output_dir = "updated_docs/"
+    os.makedirs(output_dir, exist_ok=True)
 
-        # Displaying the DataFrame in Streamlit
-        st.table(extraction_df)
+    for doc, extraction in zip(texts, st.session_state.extractions):
+        pdf_path = doc.metadata.get("source")
 
-        output_dir = "updated_docs/"
-        os.makedirs(output_dir, exist_ok=True)
+        if pdf_path:
+            with open(pdf_path, "rb") as file:
+                reader = PdfReader(file)
+                writer = PdfWriter()
 
-        for doc, extraction in zip(texts, extractions):
-            pdf_path = doc.metadata.get("source")
+                for page in reader.pages:
+                    writer.add_page(page)
 
-            if pdf_path:
-                with open(pdf_path, "rb") as file:
-                    reader = PdfReader(file)
-                    writer = PdfWriter()
+                # Convert DocumentMetadata to PDF metadata format with mapping
+                new_metadata = document_metadata_to_pdf_metadata(extraction)
 
-                    for page in reader.pages:
-                        writer.add_page(page)
+                # Merge with existing metadata
+                merged_metadata = {**reader.metadata, **new_metadata}
 
-                    # Convert DocumentMetadata to PDF metadata format with mapping
-                    new_metadata = document_metadata_to_pdf_metadata(extraction)
+                # Add merged metadata to the writer
+                writer.add_metadata(merged_metadata)
 
-                    # Merge with existing metadata
-                    merged_metadata = {**reader.metadata, **new_metadata}
+                # Construct updated file path
+                updated_pdf_path = os.path.join(
+                    output_dir, f"updated_{os.path.basename(pdf_path)}"
+                )
 
-                    # Add merged metadata to the writer
-                    writer.add_metadata(merged_metadata)
+                # Save the updated PDF
+                with open(updated_pdf_path, "wb") as updated_file:
+                    writer.write(updated_file)
 
-                    # Construct updated file path
-                    updated_pdf_path = os.path.join(
-                        output_dir, f"updated_{os.path.basename(pdf_path)}"
-                    )
-
-                    # Save the updated PDF
-                    with open(updated_pdf_path, "wb") as updated_file:
-                        writer.write(updated_file)
+                st.session_state.updated_files.append(updated_pdf_path)
