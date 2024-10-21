@@ -1,6 +1,8 @@
+import base64
 import os
 from collections import defaultdict
 
+import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 from langchain.callbacks.tracers import LangChainTracer
@@ -13,6 +15,13 @@ from pypdf import PdfReader, PdfWriter
 from utils.metadata_schema import ExtractionData
 
 load_dotenv()
+
+
+def displayPDF(uploaded_file):
+    base64_pdf = base64.b64encode(uploaded_file.read()).decode("utf-8")
+
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
 
 def merge_documents_by_source(docs):
@@ -57,7 +66,7 @@ def document_metadata_to_pdf_metadata(extraction_data):
 
 
 if __name__ == "__page__":
-    st.write("Metadata Extractor")
+    st.set_page_config(layout="wide")
     tracer = LangChainTracer(project_name="Metadata Extractor")
 
     with st.sidebar:
@@ -70,6 +79,7 @@ if __name__ == "__page__":
             "Generate Metadata",
             use_container_width=True,
             type="primary",
+            disabled=not uploaded_files,
         )
     if uploaded_files and generate_metadata:
         docs = []
@@ -85,10 +95,9 @@ if __name__ == "__page__":
             docs.append(doc)
 
         # merged_documents = merge_documents_by_source(docs)
+
         text_splitter = TokenTextSplitter(chunk_size=2000, chunk_overlap=100)
         texts = text_splitter.split_documents(docs)
-        st.write("texts")
-        st.write(texts)
 
         llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         prompt = ChatPromptTemplate.from_messages(
@@ -108,19 +117,36 @@ if __name__ == "__page__":
         )
         extractions = extractor_chain.batch(texts, config={"callbacks": [tracer]})
 
-        extracted_data = []
+        extraction_data = []
+        for extraction in extractions:
+            for metadata in extraction.metadata:
+                extraction_data.append(
+                    {
+                        "id_documento": metadata.id_documento,
+                        "fuente": metadata.fuente,
+                        "empresas": ", ".join(metadata.empresas)
+                        if metadata.empresas
+                        else None,
+                        "autor": metadata.autor,
+                        "departamento": metadata.departamento,
+                        "fecha_reunion": metadata.fecha_reunion,
+                        "status": metadata.status,
+                        "keywords": ", ".join(metadata.keywords)
+                        if metadata.keywords
+                        else None,
+                        "sensibilidad": metadata.sensibilidad,
+                        "version": metadata.version,
+                    }
+                )
 
-        st.divider()
+        # Creating a DataFrame from the flattened data
+        extraction_df = pd.DataFrame(extraction_data)
+
+        # Displaying the DataFrame in Streamlit
+        st.table(extraction_df)
 
         output_dir = "updated_docs/"
         os.makedirs(output_dir, exist_ok=True)
-
-        st.write("Merged Docs")
-        st.write(texts)
-
-        st.divider()
-        st.write("Extractions")
-        st.write(extractions)
 
         for doc, extraction in zip(texts, extractions):
             pdf_path = doc.metadata.get("source")

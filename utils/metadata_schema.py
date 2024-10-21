@@ -9,11 +9,12 @@ class DocumentMetadata(BaseModel):
     id_documento: str = Field(description="Identificador del documento")
     fuente: str = Field(description="Nombre del documento")
     empresas: list[str] = Field(
-        description="Empresa o empresas a las que pertenece el documento"
+        description="Empresa o empresas a mencionadas en el documento"
     )
     autor: str = Field(description="Autor del documento")
     departamento: Optional[str] = Field(
-        default=None, description="Departamento al cual corresponde el documento"
+        default=None,
+        description="Departamento al cual corresponde el documento. Por ejemplo, 'Recursos Humanos', 'Ventas', 'Finanzas'",
     )
     fecha_reunion: Optional[str] = Field(
         default=None,
