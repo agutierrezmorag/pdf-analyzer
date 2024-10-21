@@ -95,7 +95,14 @@ if __name__ == "__page__":
     output_dir = "updated_docs/"
     os.makedirs(output_dir, exist_ok=True)
 
-    for doc, extraction in zip(docs, extractions):
+    st.write("Merged Docs")
+    st.write(merged_documents)
+
+    st.divider()
+    st.write("Extractions")
+    st.write(extractions)
+
+    for doc, extraction in zip(merged_documents, extractions):
         pdf_path = doc.metadata.get("source")
 
         if pdf_path:
