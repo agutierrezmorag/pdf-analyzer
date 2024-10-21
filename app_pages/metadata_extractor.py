@@ -9,9 +9,9 @@ from langchain.callbacks.tracers import LangChainTracer
 from langchain.text_splitter import TokenTextSplitter
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
 from pypdf import PdfReader, PdfWriter
 
+from utils.langgraph_agent import LLM, load_uploaded_docs
 from utils.metadata_schema import ExtractionData
 
 load_dotenv()
@@ -66,7 +66,6 @@ def document_metadata_to_pdf_metadata(extraction_data):
 
 
 if __name__ == "__page__":
-    st.set_page_config(layout="wide")
     tracer = LangChainTracer(project_name="Metadata Extractor")
 
     with st.sidebar:
@@ -84,24 +83,13 @@ if __name__ == "__page__":
     if not st.session_state.uploaded_files and not generate_metadata:
         st.stop()
 
-    docs = []
-    for uploaded_file in st.session_state.uploaded_files:
-        reader = PdfReader(uploaded_file)
-        content = ""
-        for page in reader.pages:
-            content += page.extract_text()
-
-        doc = Document(
-            page_content=content, metadata={"source": f"docs/{uploaded_file.name}"}
-        )
-        docs.append(doc)
+    docs = load_uploaded_docs(st.session_state.uploaded_files)
 
     # merged_documents = merge_documents_by_source(docs)
 
     text_splitter = TokenTextSplitter(chunk_size=2000, chunk_overlap=100)
     texts = text_splitter.split_documents(docs)
 
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -113,7 +101,7 @@ if __name__ == "__page__":
             ("human", "{text}"),
         ]
     )
-    extractor_chain = prompt | llm.with_structured_output(
+    extractor_chain = prompt | LLM.with_structured_output(
         schema=ExtractionData,
         include_raw=False,
     )
