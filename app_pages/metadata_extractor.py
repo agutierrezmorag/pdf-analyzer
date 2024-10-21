@@ -8,11 +8,9 @@ from dotenv import load_dotenv
 from langchain.callbacks.tracers import LangChainTracer
 from langchain.text_splitter import TokenTextSplitter
 from langchain_core.documents import Document
-from langchain_core.prompts import ChatPromptTemplate
 from pypdf import PdfReader, PdfWriter
 
-from utils.langgraph_agent import LLM, load_uploaded_docs
-from utils.metadata_schema import ExtractionData
+from utils.langgraph_agent import get_metadata_extraction_chain, load_uploaded_docs
 
 load_dotenv()
 
@@ -85,26 +83,10 @@ if __name__ == "__page__":
 
     docs = load_uploaded_docs(st.session_state.uploaded_files)
 
-    # merged_documents = merge_documents_by_source(docs)
-
     text_splitter = TokenTextSplitter(chunk_size=2000, chunk_overlap=100)
     texts = text_splitter.split_documents(docs)
 
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "Eres un experto en extraer metadatos desde una variedad de documentos PDF empresariales. "
-                "Tu tarea es analizar el documento proporcionado y extraer todos los metadatos disponibles. "
-                "En caso de que no puedas extraer un metadato, simplemente omítelo.",
-            ),
-            ("human", "{text}"),
-        ]
-    )
-    extractor_chain = prompt | LLM.with_structured_output(
-        schema=ExtractionData,
-        include_raw=False,
-    )
+    extractor_chain = get_metadata_extraction_chain()
     st.session_state.extractions = extractor_chain.batch(
         texts, config={"callbacks": [tracer]}
     )

@@ -4,11 +4,14 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph.message import add_messages
 from pypdf import PdfReader
 from typing_extensions import TypedDict
+
+from utils.metadata_schema import ExtractionData
 
 LLM = ChatOpenAI(model="gpt-4o-mini")
 EMBEDDINGS_MODEL = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -53,5 +56,20 @@ def get_retriever(docs):
     return retriever
 
 
-def split_and_store(docs):
-    pass
+def get_metadata_extraction_chain():
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "Eres un experto en extraer metadatos desde una variedad de documentos PDF empresariales. "
+                "Tu tarea es analizar el documento proporcionado y extraer todos los metadatos disponibles. "
+                "En caso de que no puedas extraer un metadato, simplemente omítelo.",
+            ),
+            ("human", "{text}"),
+        ]
+    )
+    extractor_chain = prompt | LLM.with_structured_output(
+        schema=ExtractionData,
+        include_raw=False,
+    )
+    return extractor_chain
