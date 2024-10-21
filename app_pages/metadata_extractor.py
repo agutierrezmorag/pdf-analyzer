@@ -34,13 +34,10 @@ def merge_documents_by_source(docs):
     return merged_documents
 
 
-# Function to map DocumentMetadata to PDF metadata format with specific fields
 def document_metadata_to_pdf_metadata(extraction_data):
     pdf_metadata = {}
 
-    # Access the metadata list from the extraction_data
     for doc_metadata in extraction_data.metadata:
-        # Map specific fields to PDF metadata fields
         if doc_metadata.autor:
             pdf_metadata["/Author"] = doc_metadata.autor
         if doc_metadata.empresas:
@@ -48,15 +45,13 @@ def document_metadata_to_pdf_metadata(extraction_data):
         if doc_metadata.keywords:
             pdf_metadata["/Keywords"] = ", ".join(doc_metadata.keywords)
         if doc_metadata.fecha_reunion:
-            pdf_metadata["/CreationDate"] = (
-                doc_metadata.fecha_reunion
-            )  # Ensure it's formatted correctly
+            pdf_metadata["/CreationDate"] = doc_metadata.fecha_reunion
 
         # Custom metadata fields
-        pdf_metadata["/id_documento"] = doc_metadata.id_documento
-        pdf_metadata["/status"] = doc_metadata.status
-        pdf_metadata["/sensibilidad"] = doc_metadata.sensibilidad
-        pdf_metadata["/version"] = doc_metadata.version
+        pdf_metadata["/ID Documento"] = doc_metadata.id_documento
+        pdf_metadata["/Estatus"] = doc_metadata.status
+        pdf_metadata["/Sensibilidad"] = doc_metadata.sensibilidad
+        pdf_metadata["/Version"] = doc_metadata.version
 
     return pdf_metadata
 
