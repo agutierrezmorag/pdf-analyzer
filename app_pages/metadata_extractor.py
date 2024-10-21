@@ -92,8 +92,6 @@ if __name__ == "__page__":
 
     st.divider()
 
-    st.write(extracted_data)
-
     output_dir = "updated_docs/"
     os.makedirs(output_dir, exist_ok=True)
 
