@@ -35,6 +35,11 @@ if __name__ == "__main__":
         title="Document Q&A",
         icon=":material/question_answer:",
     )
+    web_qa_page = st.Page(
+        page="app_pages/web_qa.py",
+        title="Web Q&A",
+        icon=":material/web:",
+    )
 
-    pg = st.navigation([metadata_extractor_page, doc_qa_page])
+    pg = st.navigation([metadata_extractor_page, doc_qa_page, web_qa_page])
     pg.run()
