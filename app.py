@@ -14,6 +14,9 @@ if __name__ == "__main__":
     if "extraction_df" not in st.session_state:
         st.session_state.extraction_df = None
 
+    if "results" not in st.session_state:
+        st.session_state.results = None
+
     if "checkpointer" not in st.session_state:
         st.session_state.checkpointer = MemorySaver()
     if "thread_id" not in st.session_state:

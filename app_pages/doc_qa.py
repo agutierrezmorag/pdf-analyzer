@@ -1,11 +1,9 @@
 import streamlit as st
 from dotenv import load_dotenv
 from langchain.callbacks.tracers import LangChainTracer
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import AIMessage, HumanMessage
 
-from utils.langgraph_agent import LLM, get_retriever, load_uploaded_docs
+from utils.langgraph_agent import get_qa_agent, get_retriever, load_uploaded_docs
 
 load_dotenv()
 
@@ -31,36 +29,24 @@ if __name__ == "__page__":
 
     docs = load_uploaded_docs(st.session_state.uploaded_files)
     retriever = get_retriever(docs)
-
-    system_prompt = (
-        "You are an assistant for question-answering tasks. "
-        "Use the following pieces of retrieved context to answer "
-        "the question. If you don't know the answer, say that you "
-        "don't know. Use three sentences maximum and keep the "
-        "answer concise."
-        "\n\n"
-        "{context}"
-    )
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("human", "{input}"),
-        ]
-    )
-
-    question_answer_chain = create_stuff_documents_chain(LLM, prompt)
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+    agent = get_qa_agent(retriever)
 
     if question := st.chat_input():
-        with st.chat_message("human"):
-            st.write(question)
-        results = rag_chain.invoke(
-            {
-                "input": question,
+        st.session_state.results = agent.invoke(
+            {"messages": [HumanMessage(content=question)]},
+            config={
+                "callbacks": [tracer],
+                "configurable": {"thread_id": st.session_state.thread_id},
             },
-            config={"callbacks": [tracer]},
         )
 
-        with st.chat_message("ai"):
-            st.write(results["answer"])
+    if not st.session_state.results:
+        st.stop()
+
+    for message_str in st.session_state.results["messages"]:
+        if isinstance(message_str, HumanMessage):
+            with st.chat_message("human"):
+                st.write(message_str.content)
+        elif isinstance(message_str, AIMessage):
+            with st.chat_message("ai"):
+                st.write(message_str.content)

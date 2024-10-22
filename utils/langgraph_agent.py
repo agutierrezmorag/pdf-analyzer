@@ -1,5 +1,6 @@
 from typing import Annotated, Sequence
 
+import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.documents import Document
@@ -8,6 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph.message import add_messages
+from langgraph.prebuilt import create_react_agent
 from pypdf import PdfReader
 from typing_extensions import TypedDict
 
@@ -54,6 +56,14 @@ def get_retriever(docs):
     )
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     return retriever
+
+
+def get_qa_agent(retriever):
+    tools = _get_tool(retriever)
+    agent_executor = create_react_agent(
+        LLM, tools, checkpointer=st.session_state.checkpointer
+    )
+    return agent_executor
 
 
 def get_metadata_extraction_chain():
