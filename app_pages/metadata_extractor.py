@@ -77,6 +77,9 @@ if __name__ == "__page__":
         )
         for uploaded_file in st.session_state.uploaded_files:
             pdf_viewer(uploaded_file.read(), width=700, height=400)
+            pdf_bytes = uploaded_file.getvalue()
+            with open("docs/" + uploaded_file.name, "wb") as f:
+                f.write(pdf_bytes)
 
     if not st.session_state.uploaded_files:
         st.stop()
