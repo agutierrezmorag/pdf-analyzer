@@ -9,6 +9,7 @@ from langchain.callbacks.tracers import LangChainTracer
 from langchain.text_splitter import TokenTextSplitter
 from langchain_core.documents import Document
 from pypdf import PdfReader, PdfWriter
+from streamlit_pdf_viewer import pdf_viewer
 
 from utils.langchain_funcs import get_metadata_extraction_chain, load_uploaded_docs
 
@@ -51,10 +52,11 @@ def document_metadata_to_pdf_metadata(extraction_data):
             pdf_metadata["/Subject"] = ", ".join(doc_metadata.empresas)
         if doc_metadata.keywords:
             pdf_metadata["/Keywords"] = ", ".join(doc_metadata.keywords)
-        if doc_metadata.fecha_reunion:
-            pdf_metadata["/CreationDate"] = doc_metadata.fecha_reunion
+        if doc_metadata.fechas_relevantes:
+            pdf_metadata["/Fechas Relevantes"] = doc_metadata.fechas_relevantes
 
         # Custom metadata fields
+        pdf_metadata["/Resumen de contenido"] = doc_metadata.resumen
         pdf_metadata["/ID Documento"] = doc_metadata.id_documento
         pdf_metadata["/Estatus"] = doc_metadata.status
         pdf_metadata["/Sensibilidad"] = doc_metadata.sensibilidad
@@ -78,6 +80,8 @@ if __name__ == "__page__":
             type="primary",
             disabled=not st.session_state.uploaded_files,
         )
+        for uploaded_file in st.session_state.uploaded_files:
+            pdf_viewer(uploaded_file.read(), width=700, height=400)
     if not st.session_state.uploaded_files and not generate_metadata:
         st.stop()
 
@@ -99,12 +103,13 @@ if __name__ == "__page__":
                 {
                     "id_documento": metadata.id_documento,
                     "fuente": metadata.fuente,
+                    "resumen": metadata.resumen,
                     "empresas": ", ".join(metadata.empresas)
                     if metadata.empresas
                     else None,
                     "autor": metadata.autor,
                     "departamento": metadata.departamento,
-                    "fecha_reunion": metadata.fecha_reunion,
+                    "fechas_relevantes": metadata.fechas_relevantes,
                     "status": metadata.status,
                     "keywords": ", ".join(metadata.keywords)
                     if metadata.keywords

@@ -2,6 +2,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from langchain.callbacks.tracers import LangChainTracer
 from langchain_core.messages import AIMessage, HumanMessage
+from streamlit_pdf_viewer import pdf_viewer
 
 from utils.langchain_funcs import get_qa_agent, get_retriever, load_uploaded_docs
 
@@ -23,6 +24,8 @@ if __name__ == "__page__":
             type="primary",
             disabled=not st.session_state.uploaded_files,
         )
+        for uploaded_file in st.session_state.uploaded_files:
+            pdf_viewer(uploaded_file.read(), width=700, height=400)
 
     if not st.session_state.uploaded_files and not load_docs:
         st.stop()
