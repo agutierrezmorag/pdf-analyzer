@@ -5,13 +5,16 @@ from collections import defaultdict
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
-from langchain.callbacks.tracers import LangChainTracer
 from langchain.text_splitter import TokenTextSplitter
 from langchain_core.documents import Document
 from pypdf import PdfReader, PdfWriter
 from streamlit_pdf_viewer import pdf_viewer
 
-from utils.langchain_funcs import get_metadata_extraction_chain, load_uploaded_docs
+from utils.langchain_funcs import (
+    get_metadata_extraction_chain,
+    load_uploaded_docs,
+    set_tracer,
+)
 
 load_dotenv()
 
@@ -66,8 +69,6 @@ def document_metadata_to_pdf_metadata(extraction_data):
 
 
 if __name__ == "__page__":
-    tracer = LangChainTracer(project_name="Metadata Extractor")
-
     with st.sidebar:
         st.session_state.uploaded_files = st.file_uploader(
             "Upload PDF files",
@@ -92,7 +93,7 @@ if __name__ == "__page__":
 
     extractor_chain = get_metadata_extraction_chain()
     st.session_state.extractions = extractor_chain.batch(
-        texts, config={"callbacks": [tracer]}
+        texts, config={"callbacks": [set_tracer("Metadata Extractor")]}
     )
 
     extraction_data = []

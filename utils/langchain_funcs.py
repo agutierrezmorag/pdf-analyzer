@@ -1,6 +1,7 @@
 from typing import Annotated, Sequence
 
 import streamlit as st
+from langchain.callbacks.tracers import LangChainTracer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.documents import Document
@@ -26,8 +27,8 @@ class AgentState(TypedDict):
 def _get_tool(retriever):
     retriever_tool = create_retriever_tool(
         retriever,
-        "retrieve_pdf_docs",
-        "Search and return information from PDF documents",
+        "retrieve_data",
+        "Search and return information from documents",
     )
     return [retriever_tool]
 
@@ -56,6 +57,10 @@ def get_retriever(docs):
     )
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     return retriever
+
+
+def set_tracer(project_name):
+    return LangChainTracer(project_name=project_name)
 
 
 def get_qa_agent(retriever):

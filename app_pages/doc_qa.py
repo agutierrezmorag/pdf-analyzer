@@ -1,17 +1,19 @@
 import streamlit as st
 from dotenv import load_dotenv
-from langchain.callbacks.tracers import LangChainTracer
 from langchain_core.messages import AIMessage, HumanMessage
 from streamlit_pdf_viewer import pdf_viewer
 
-from utils.langchain_funcs import get_qa_agent, get_retriever, load_uploaded_docs
+from utils.langchain_funcs import (
+    get_qa_agent,
+    get_retriever,
+    load_uploaded_docs,
+    set_tracer,
+)
 
 load_dotenv()
 
 
 if __name__ == "__page__":
-    tracer = LangChainTracer(project_name="Doc Q&A")
-
     with st.sidebar:
         st.session_state.uploaded_files = st.file_uploader(
             "Upload PDF documents",
@@ -38,7 +40,7 @@ if __name__ == "__page__":
         st.session_state.results = agent.invoke(
             {"messages": [HumanMessage(content=question)]},
             config={
-                "callbacks": [tracer],
+                "callbacks": [set_tracer("Doc Q&A")],
                 "configurable": {"thread_id": st.session_state.thread_id},
             },
         )
