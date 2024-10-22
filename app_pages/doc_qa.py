@@ -20,16 +20,14 @@ if __name__ == "__page__":
             type=["pdf"],
             accept_multiple_files=True,
         )
-        load_docs = st.button(
-            "Load Documents",
-            use_container_width=True,
-            type="primary",
-            disabled=not st.session_state.uploaded_files,
-        )
+
         for uploaded_file in st.session_state.uploaded_files:
             pdf_viewer(uploaded_file.read(), width=700, height=400)
+            pdf_bytes = uploaded_file.getvalue()
+            with open("docs/" + uploaded_file.name, "wb") as f:
+                f.write(pdf_bytes)
 
-    if not st.session_state.uploaded_files and not load_docs:
+    if not st.session_state.uploaded_files:
         st.stop()
 
     docs = load_uploaded_docs(st.session_state.uploaded_files)
