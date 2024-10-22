@@ -37,9 +37,10 @@ if __name__ == "__page__":
         st.stop()
 
     for message_str in st.session_state.results["messages"]:
-        if isinstance(message_str, HumanMessage):
-            with st.chat_message("human"):
-                st.write(message_str.content)
-        elif isinstance(message_str, AIMessage):
-            with st.chat_message("ai"):
-                st.write(message_str.content)
+        if message_str:
+            if isinstance(message_str, HumanMessage):
+                with st.chat_message("human"):
+                    st.write(message_str.content)
+            elif isinstance(message_str, AIMessage):
+                with st.chat_message("ai"):
+                    st.write(message_str.content)
