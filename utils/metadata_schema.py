@@ -8,17 +8,18 @@ class DocumentMetadata(BaseModel):
 
     id_documento: str = Field(description="Identificador del documento")
     fuente: str = Field(description="Nombre del documento")
+    resumen: str = Field(description="Resumen de los contenidos del documento")
     empresas: list[str] = Field(
         description="Empresa o empresas a mencionadas en el documento"
     )
     autor: str = Field(description="Autor del documento")
     departamento: Optional[str] = Field(
         default=None,
-        description="Departamento al cual corresponde el documento. Por ejemplo, 'Recursos Humanos', 'Ventas', 'Finanzas'",
+        description="Departamento al cual corresponde el documento. Puede ser uno de los siguientes: 'Recursos Humanos', 'Ventas' o 'Finanzas'",
     )
-    fecha_reunion: Optional[str] = Field(
+    fechas_relevantes: Optional[str] = Field(
         default=None,
-        description="Fecha de la reunion a la que corresponde el documento",
+        description="Fechas relevantes mencionadas en el documento, como fechas de reuniones, eventos, etc. Ejemplo formato: '[Proxima reunión: DD-MM-YYYY', 'Fecha de entrega: DD-MM-YYYY']",
     )
     status: Optional[str] = Field(
         default=None,
