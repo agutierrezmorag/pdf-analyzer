@@ -75,15 +75,10 @@ if __name__ == "__page__":
             type=["pdf"],
             accept_multiple_files=True,
         )
-        generate_metadata = st.button(
-            "Generate Metadata",
-            use_container_width=True,
-            type="primary",
-            disabled=not st.session_state.uploaded_files,
-        )
         for uploaded_file in st.session_state.uploaded_files:
             pdf_viewer(uploaded_file.read(), width=700, height=400)
-    if not st.session_state.uploaded_files and not generate_metadata:
+
+    if not st.session_state.uploaded_files:
         st.stop()
 
     docs = load_uploaded_docs(st.session_state.uploaded_files)
