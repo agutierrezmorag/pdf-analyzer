@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from langchain.callbacks.tracers import LangChainTracer
 from langchain_core.messages import AIMessage, HumanMessage
 
-from utils.langgraph_agent import get_qa_agent, get_retriever, load_uploaded_docs
+from utils.langchain_funcs import get_qa_agent, get_retriever, load_uploaded_docs
 
 load_dotenv()
 

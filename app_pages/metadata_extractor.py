@@ -10,7 +10,7 @@ from langchain.text_splitter import TokenTextSplitter
 from langchain_core.documents import Document
 from pypdf import PdfReader, PdfWriter
 
-from utils.langgraph_agent import get_metadata_extraction_chain, load_uploaded_docs
+from utils.langchain_funcs import get_metadata_extraction_chain, load_uploaded_docs
 
 load_dotenv()
 
