@@ -47,7 +47,7 @@ if __name__ == "__page__":
         st.stop()
 
     for message_str in st.session_state.results["messages"]:
-        if message_str.strip() != "":
+        if message_str.content.strip() != "":
             if isinstance(message_str, HumanMessage):
                 with st.chat_message("human"):
                     st.write(message_str.content)
